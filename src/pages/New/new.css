@@ -1,0 +1,31 @@
+form textarea{
+    resize: none;
+    height: 105px;
+}
+
+form input[type='radio']{
+    margin: 15px 0;
+}
+
+form input[type='radio']:not(:first-child){
+    margin-left: 15px;
+}
+
+.form-profile .status{
+    margin-bottom: 1em;
+}
+
+.status span{
+    padding-left: 0.5em;
+    font-size: 1.2em;
+}
+
+.form-profile ul li{
+    padding: 10px 0 10px 10px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.form-profile ul li:hover{
+    background-color: #e2dfdf;
+}
