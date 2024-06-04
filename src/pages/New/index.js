@@ -6,6 +6,8 @@ import { FiPlusCircle } from 'react-icons/fi'
 import { db } from '../../services/firebaseConnection'
 import { collection, getDocs, getDoc, doc, addDoc } from 'firebase/firestore'
 
+import { toast } from 'react-toastify'
+
 import './new.css'
 
 const listRef = collection(db, 'customers')
@@ -16,12 +18,15 @@ export default function New(){
     const [search, setSearch] = useState('') // termos passado no campo de pesquisa do cliente
     const [customers, setCustomers] = useState([]) // salvar lista de clientes 
     const [filteredClients, setFilterClients] = useState([]) // salvar lista de clientes filtrados
-    const [customerSelected, setCustomerSelected] = useState(0) // salvar posição do cliente selecionado no campo Cliente..
-    const [automovel, setAutomovel] = useState('')
-    const [anoVeiculo, setAnoVeiculo] = useState('')
-    const [mecanico, setMecanico] = useState('')
-    const [complemento, setComplemento] = useState('')
+    const [customerSelected, setCustomerSelected] = useState('') // salvar posição do cliente selecionado no campo Cliente..
+    const [car, setCar] = useState('')
+    const [carYears, setCarYears] = useState('')
+    const [dateRecord, setDateRecord] = useState('')
+    const [mechanic, setMechanic] = useState('')
     const [status, setStatus] = useState('Aberto')
+    const [budget, setBudget] = useState('')
+    const [complement, setComplement] = useState('')
+    
 
     const searchLowerCase = search.toLowerCase()
 
@@ -60,7 +65,7 @@ export default function New(){
     }
 
     function handleChangeProvider(e){
-        setMecanico(e.target.value)
+        setMechanic(e.target.value)
         // salvar mecanico selecionado na lista 
     }
 
@@ -79,13 +84,10 @@ export default function New(){
     }
 
     function handleClientClick(cliente, index){
+        console.log(cliente, index)
         setSearch(cliente.nomeCliente)
         setCustomerSelected(index)
         setFilterClients([])
-    }
-
-    function handleChangeCustomers(e){
-        setCustomerSelected(e.target.value)
     }
 
     async function handleRegister(e){
@@ -93,7 +95,22 @@ export default function New(){
 
         await addDoc(collection(db, 'Services'), {
             created: new Date(),
-            
+            cliente: search,
+            automovel: car,
+            ano: carYears,
+            mecanico: mechanic,
+            status: status,
+            orcamento: budget,
+            complemento: complement,
+        })
+        .then(() => {
+            toast.success('Atendimento Registrado!')
+            setComplement('')
+            setCustomerSelected('')
+        })
+        .catch((error) => {
+            toast.error('Erro ao Registrar!')
+            console.log(error)
         })
     }
 
@@ -135,7 +152,7 @@ export default function New(){
                             type="text"
                             name='veiculo'
                             placeholder='Nome do veiculo'
-                            onChange={(e => setAutomovel(e.target.value))}
+                            onChange={(e => setCar(e.target.value))}
                         />
 
                         <label>Ano</label> 
@@ -143,19 +160,11 @@ export default function New(){
                             type="text"
                             name='ano'
                             placeholder='Ano do veiculo'
-                            onChange={(e) => setAnoVeiculo(e.target.value)}
-                        /> 
-
-                        <label>Data</label> 
-                        <input 
-                            type="date"
-                            name='ano'
-                            placeholder='Ano do veiculo'
-                            onChange={(e) => setAnoVeiculo(e.target.value)}
+                            onChange={(e) => setCarYears(e.target.value)}
                         /> 
 
                         <label>Mêcanico</label>
-                        <select value={mecanico} onChange={handleChangeProvider}>
+                        <select value={mechanic} onChange={handleChangeProvider}>
                             <option value='Mecanico 1'>Mecanico 1</option>
                             <option value='Mecanico 2'>Mecanico 2</option>
                             <option value='Mecanico 3'>Mecanico 3</option>
@@ -197,15 +206,15 @@ export default function New(){
                             type="text"
                             name='Valor'
                             placeholder='Valor do serviço'
-                            onChange={(e) => setAnoVeiculo(e.target.value)}
+                            onChange={(e) => setBudget(e.target.value)}
                         /> 
 
                         <label>Descrição do atendimento</label>
                         <textarea 
                             type='text' 
                             placeholder='Descreva o serviço a ser realizado..'
-                            value={complemento}
-                            onChange={ (e) => setComplemento(e.target.value)}
+                            value={complement}
+                            onChange={ (e) => setComplement(e.target.value)}
                         />
 
                         <button>Registrar</button>
