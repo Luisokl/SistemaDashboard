@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs, orderBy, limit, startAfter, query } from 'firebase/firestore'
 import { db } from '../../services/firebaseConnection'
 
+import { format } from 'date-fns'
+
 import './dashboard.css'
 
 const listRef = collection(db, "Services")
@@ -19,12 +21,15 @@ export default function Dashboard() {
     const { logout } = useContext(AuthContext)
 
     const [services, setServices] = useState([]) //salvar nossa lista de atendimentos
-    const [loading, setLoading] = useState(true)
-    const [isEmpty, setIsEmpty] = useState(false)
+    const [loading, setLoading] = useState(true) // loading enquanto carrega a lista na interface
+
+    const [isEmpty, setIsEmpty] = useState(false) // estado para mostrar quando a lista estiver vazia
+    const [lastDocs, setLastDocs] = useState() //salvar o ultimo item apresentado na lista 
+    const [loadingMore, setLoadingMore] = useState(false) //loading enquanto busca por novos doc no banco de dados
 
     useEffect(() => {
-        async function loadServices(){
-            const q = query(listRef, orderBy('created', 'desc'), limit(5)) //parametros para busca no banco de dados, por ordem descrecente de criação do doc.
+        async function loadServices() {
+            const q = query(listRef, orderBy('created', 'desc'), limit(1)) //parametros para busca no banco de dados, por ordem descrecente de criação do doc.
             const querySnapshot = await getDocs(q) // faz a busca no banco com base na query acima
             await updateState(querySnapshot) // chamar função para listar os documentos
 
@@ -37,10 +42,10 @@ export default function Dashboard() {
     }, [])
 
 
-    async function updateState(querySnapshot){   //função responsável por tratar a lista de documentos encontrados com base nos paramêtros da query
+    async function updateState(querySnapshot) {   //função responsável por tratar a lista de documentos encontrados com base nos paramêtros da query
         const isCollectionEmpty = querySnapshot.size === 0;
 
-        if(!isCollectionEmpty){
+        if (!isCollectionEmpty) {
             let lista = []
 
             querySnapshot.forEach(doc => {
@@ -51,17 +56,50 @@ export default function Dashboard() {
                     cliente: doc.data().cliente,
                     complemento: doc.data().complemento,
                     created: doc.data().created,
+                    createdFormat: format(doc.data().created.toDate(), 'dd/MM/yyyy'),
                     mecanico: doc.data().mecanico,
                     orcamento: doc.data().orcamento,
                     status: doc.data().status
                 })
             })
 
-            setServices(...services, ...lista ) // adicionar a nossa lista que está sendo renderizada na tela, os novos atendimentos encontrados
-        }else{
+            const lastDocs = querySnapshot.docs[querySnapshot.docs.length -1] // pegando ultimo item da lista
+
+            setServices([...services, ...lista]) // adicionar a nossa lista que está sendo renderizada na tela, os novos atendimentos encontrados
+            setLastDocs(lastDocs)
+
+        } else {
             setIsEmpty(true)
         }
-    } 
+
+        setLoadingMore(false)
+    }
+
+    async function handleMore(){
+        setLoadingMore(true)
+
+        const q = query(listRef, orderBy('created', 'desc'), startAfter(lastDocs), limit(1)) //faz uma nova busca no banco apartir do ultimo item
+        const querySnapshot = await getDocs(q)
+        await updateState(querySnapshot) //chamando a função de listagem 
+    }
+
+    if(loading){
+        return(
+            <div>
+                <Header/>
+
+                <div className='content'>
+                    <Title name="Atendimentos">
+                        <FiMessageSquare size={25} />
+                    </Title>
+
+                    <div className='container dashboard'>
+                        <span>Buscando Atendimentos...</span>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div>
@@ -102,27 +140,36 @@ export default function Dashboard() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td data-label="Veiculo">Corolla</td>
-                                        <td data-label="Responsavel">Miro</td>
-                                        <td data-label="Entrada">08/04/2024</td>
-                                        <td data-label='Orcamento'>R$ 235.00</td>
-                                        <td data-label="Status">
-                                            <span className='badge' style={{ background: '#999' }}>
-                                                Em aberto
-                                            </span>
-                                        </td>
-                                        <td data-label="#">
-                                            <button className='action'>
-                                                <FiSearch color='#FFF' size={17} style={{ backgroundColor: '#3583f6' }} />
-                                            </button>
-                                            <button className='action'>
-                                                <FiEdit2 color='#FFF' size={17} style={{ backgroundColor: '#F6A935' }} />
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    {services.map((item, index) => {
+                                        return(
+                                            <tr key={index}>
+                                                <td data-label="Veiculo">{item.automovel}</td>
+                                                <td data-label="Responsavel">{item.mecanico}</td>
+                                                <td data-label="Entrada">{item.createdFormat}</td>
+                                                <td data-label='Orcamento'>{item.orcamento}</td>
+                                                <td data-label="Status">
+                                                    <span className='badge' style={{ backgroundColor: item.status === 'Aberto' 
+                                                        ? '#5CB85C' 
+                                                        : item.status === 'Fechado' ? '#D9534F'
+                                                        : '#999' }}>{item.status}
+                                                    </span>
+                                                </td>
+                                                <td data-label="#">
+                                                    <button className='action'>
+                                                        <FiSearch color='#FFF' size={17} style={{ backgroundColor: '#3583f6' }} />
+                                                    </button>
+                                                    <button className='action'>
+                                                        <FiEdit2 color='#FFF' size={17} style={{ backgroundColor: '#F6A935' }} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
                                 </tbody>
                             </table>
+
+                            {loadingMore && <h3 className='loadingMore'>Buscando mais atendimentos...</h3>}
+                            {!loadingMore && !isEmpty && <button className='btn-more' onClick={handleMore}>Bucar mais</button>}
                         </>
 
                     )}
