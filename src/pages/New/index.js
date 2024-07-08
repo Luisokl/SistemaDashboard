@@ -9,11 +9,15 @@ import { collection, getDocs, getDoc, doc, addDoc } from 'firebase/firestore'
 import { toast } from 'react-toastify'
 
 import './new.css'
+import { useParams } from 'react-router-dom'
+import { setYear } from 'date-fns'
 
 const listRef = collection(db, 'customers')
 // conexão com banco de dados, lista/ coleção de clientes cadastrados.
 
 export default function New(){
+
+    const { id } = useParams()
 
     const [search, setSearch] = useState('') // termos passado no campo de pesquisa do cliente
     const [customers, setCustomers] = useState([]) // salvar lista de clientes 
@@ -51,6 +55,10 @@ export default function New(){
                 }
 
                 setCustomers(lista)
+
+                if(id){
+                    loadId(lista)
+                }
             })
             .catch((error) => {
                 console.log(error)
@@ -58,7 +66,24 @@ export default function New(){
         }
 
         listCustomers()
-    }, [])
+    }, [id])
+
+    async function loadId(lista){
+        const docRef = doc(db, "Services", id)
+        await getDoc(docRef)
+        .then((snapshot) => {
+            setSearch(snapshot.data().cliente)
+            setCar(snapshot.data().automovel)
+            setCarYears(snapshot.data().ano)
+            setMechanic(snapshot.data().mecanico)
+            setStatus(snapshot.data().status)
+            setBudget(snapshot.data().orcamento)
+            setComplement(snapshot.data().complemento)
+        }) 
+        .catch((error) =>{
+            console.log(error)
+        })
+    }
 
     function handleOptionChange(e){
         setStatus(e.target.value)
@@ -150,6 +175,7 @@ export default function New(){
                         <input 
                             type="text"
                             name='veiculo'
+                            value={car}
                             placeholder='Nome do veiculo'
                             onChange={(e => setCar(e.target.value))}
                         />
@@ -158,6 +184,7 @@ export default function New(){
                         <input 
                             type="text"
                             name='ano'
+                            value={carYears}
                             placeholder='Ano do veiculo'
                             onChange={(e) => setCarYears(e.target.value)}
                         /> 
@@ -204,6 +231,7 @@ export default function New(){
                         <input 
                             type="text"
                             name='Valor'
+                            value={budget}
                             placeholder='Valor do serviço'
                             onChange={(e) => setBudget(e.target.value)}
                         /> 
