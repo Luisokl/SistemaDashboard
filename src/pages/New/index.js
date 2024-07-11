@@ -4,20 +4,21 @@ import Title from '../../components/Title'
 import { FiPlusCircle } from 'react-icons/fi'
 
 import { db } from '../../services/firebaseConnection'
-import { collection, getDocs, getDoc, doc, addDoc } from 'firebase/firestore'
+import { collection, getDocs, getDoc, doc, addDoc, updateDoc } from 'firebase/firestore'
 
 import { toast } from 'react-toastify'
 
 import './new.css'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { setYear } from 'date-fns'
 
 const listRef = collection(db, 'customers')
 // conexão com banco de dados, lista/ coleção de clientes cadastrados.
 
-export default function New(){
+export default function New() {
 
     const { id } = useParams()
+    const navigate = useNavigate()
 
     const [search, setSearch] = useState('') // termos passado no campo de pesquisa do cliente
     const [customers, setCustomers] = useState([]) // salvar lista de clientes 
@@ -30,76 +31,81 @@ export default function New(){
     const [status, setStatus] = useState('Aberto')
     const [budget, setBudget] = useState('')
     const [complement, setComplement] = useState('')
-    
+
+    const [idCustomer, setIdCustomer] = useState('') // atualizar o atendimento 
+
 
     const searchLowerCase = search.toLowerCase()
 
     useEffect(() => {
-        async function listCustomers(){
+        async function listCustomers() {
             const querySnapshot = await getDocs(listRef)
-            // faz a busca da coleção (customers) no banco.
-            .then((snapshot) => {
-                let lista = []
+                // faz a busca da coleção (customers) no banco.
+                .then((snapshot) => {
+                    let lista = []
 
-                snapshot.forEach((doc) => {
-                    // faz a busca na lista customers
-                    lista.push({
-                        nomeCliente: doc.data().nomeCliente
+                    snapshot.forEach((doc) => {
+                        // faz a busca na lista customers
+                        lista.push({
+                            nomeCliente: doc.data().nomeCliente
+                        })
                     })
+
+
+                    if (snapshot.docs.size === 0) {
+                        console.log('NENHUM CLIENTE ENCONTRADO!!')
+                        return;
+                    }
+
+                    setCustomers(lista)
+
+                    if (id) {
+                        loadId(lista)
+                    }
                 })
-            
-
-                if(snapshot.docs.size === 0){
-                    console.log('NENHUM CLIENTE ENCONTRADO!!')
-                    return;
-                }
-
-                setCustomers(lista)
-
-                if(id){
-                    loadId(lista)
-                }
-            })
-            .catch((error) => {
-                console.log(error)
-            })
+                .catch((error) => {
+                    console.log(error)
+                })
         }
 
         listCustomers()
     }, [id])
 
-    async function loadId(lista){
+    async function loadId(lista) {
         const docRef = doc(db, "Services", id)
         await getDoc(docRef)
-        .then((snapshot) => {
-            setSearch(snapshot.data().cliente)
-            setCar(snapshot.data().automovel)
-            setCarYears(snapshot.data().ano)
-            setMechanic(snapshot.data().mecanico)
-            setStatus(snapshot.data().status)
-            setBudget(snapshot.data().orcamento)
-            setComplement(snapshot.data().complemento)
-        }) 
-        .catch((error) =>{
-            console.log(error)
-        })
+            .then((snapshot) => {
+                setSearch(snapshot.data().cliente)
+                setCar(snapshot.data().automovel)
+                setCarYears(snapshot.data().ano)
+                setMechanic(snapshot.data().mecanico)
+                setStatus(snapshot.data().status)
+                setBudget(snapshot.data().orcamento)
+                setComplement(snapshot.data().complemento)
+
+                setIdCustomer(true)
+            })
+            .catch((error) => {
+                console.log(error)
+                setIdCustomer(false)
+            })
     }
 
-    function handleOptionChange(e){
+    function handleOptionChange(e) {
         setStatus(e.target.value)
     }
 
-    function handleChangeProvider(e){
+    function handleChangeProvider(e) {
         setMechanic(e.target.value)
         // salvar mecanico selecionado na lista 
     }
 
-    function handleSearchChange(e){
+    function handleSearchChange(e) {
         const searchValue = e.target.value
         setSearch(searchValue)
 
         if (searchValue) {
-            const filtered = customers.filter((cliente) => 
+            const filtered = customers.filter((cliente) =>
                 cliente.nomeCliente.toLowerCase().includes(searchValue.toLowerCase())
             )
             setFilterClients(filtered)
@@ -108,16 +114,42 @@ export default function New(){
         }
     }
 
-    function handleClientClick(cliente, index){
+    function handleClientClick(cliente, index) {
         console.log(cliente, index)
         setSearch(cliente.nomeCliente)
         setCustomerSelected(index)
         setFilterClients([])
     }
 
-    async function handleRegister(e){
+    async function handleRegister(e) {
         e.preventDefault()
 
+        if (idCustomer) {
+            //atualizando atendimento..
+            const docRef = doc(db, 'Services', id)
+            await updateDoc(docRef, {
+                cliente: search,
+                automovel: car,
+                ano: carYears,
+                mecanico: mechanic,
+                status: status,
+                orcamento: budget,
+                complemento: complement
+            })
+                .then(() => {
+                    toast.info("Atendimento atualizado com sucesso!")
+                    navigate('/dashboard')
+                })
+                .catch((error) => {
+                    toast.error("Ops erro ao atualizar!")
+                    console.log(error)
+                })
+
+            return
+        }
+
+
+        // Registrar um atendimento
         await addDoc(collection(db, 'Services'), {
             created: new Date(),
             cliente: search,
@@ -128,41 +160,41 @@ export default function New(){
             orcamento: budget,
             complemento: complement,
         })
-        .then(() => {
-            toast.success('Atendimento Registrado!')
-            setComplement('')
-            setCustomerSelected('')
-        })
-        .catch((error) => {
-            toast.error('Erro ao Registrar!')
-            console.log(error)
-        })
+            .then(() => {
+                toast.success('Atendimento Registrado!')
+                setComplement('')
+                setCustomerSelected('')
+            })
+            .catch((error) => {
+                toast.error('Erro ao Registrar!')
+                console.log(error)
+            })
     }
 
-    return(
+    return (
         <div>
-            <Header/>
+            <Header />
 
             <div className="content">
-                <Title name='Cadastrar Atendimento'>
-                    <FiPlusCircle size={25}/>
+                <Title name={id ? 'Editando Atendimento' : 'Cadastrar Atendimento'}>
+                    <FiPlusCircle size={25} />
                 </Title>
-                
+
                 <div className="container">
                     <form className='form-profile' onSubmit={handleRegister}>
 
                         <label>Clientes</label>
-                        <input 
-                            type='search' 
-                            value={search} 
-                            placeholder='Buscar clientes' 
+                        <input
+                            type='search'
+                            value={search}
+                            placeholder='Buscar clientes'
                             onChange={handleSearchChange}
                         />
 
                         {search && filteredClients.length > 0 &&
                             <ul>
                                 {filteredClients.map((cliente, index) => {
-                                    return(
+                                    return (
                                         <li key={index} onClick={() => handleClientClick(cliente, index)}>
                                             <p>{cliente.nomeCliente}</p>
                                         </li>
@@ -171,8 +203,8 @@ export default function New(){
                             </ul>
                         }
 
-                        <label>Automóvel</label>    
-                        <input 
+                        <label>Automóvel</label>
+                        <input
                             type="text"
                             name='veiculo'
                             value={car}
@@ -180,14 +212,14 @@ export default function New(){
                             onChange={(e => setCar(e.target.value))}
                         />
 
-                        <label>Ano</label> 
-                        <input 
+                        <label>Ano</label>
+                        <input
                             type="text"
                             name='ano'
                             value={carYears}
                             placeholder='Ano do veiculo'
                             onChange={(e) => setCarYears(e.target.value)}
-                        /> 
+                        />
 
                         <label>Mêcanico</label>
                         <select value={mechanic} onChange={handleChangeProvider}>
@@ -200,48 +232,48 @@ export default function New(){
                         <label>Status</label>
                         <div className='status'>
                             <input
-                                type="radio" 
-                                name='radio' 
-                                value='Aberto' 
+                                type="radio"
+                                name='radio'
+                                value='Aberto'
                                 onChange={handleOptionChange}
-                                checked={ status === 'Aberto'}
+                                checked={status === 'Aberto'}
                             />
                             <span>Em aberto</span>
 
-                            <input 
-                                type="radio" 
-                                name='radio' 
-                                value='Progresso' 
+                            <input
+                                type="radio"
+                                name='radio'
+                                value='Progresso'
                                 onChange={handleOptionChange}
-                                checked={ status === 'Progresso'}
+                                checked={status === 'Progresso'}
                             />
                             <span>Progresso</span>
 
                             <input
-                                type="radio" 
-                                name='radio' 
+                                type="radio"
+                                name='radio'
                                 value='Fechado'
                                 onChange={handleOptionChange}
-                                checked={ status === 'Fechado'}
+                                checked={status === 'Fechado'}
                             />
                             <span>Fechado</span>
                         </div>
 
-                        <label>Orçamento</label> 
-                        <input 
+                        <label>Orçamento</label>
+                        <input
                             type="text"
                             name='Valor'
                             value={budget}
                             placeholder='Valor do serviço'
                             onChange={(e) => setBudget(e.target.value)}
-                        /> 
+                        />
 
                         <label>Descrição do atendimento</label>
-                        <textarea 
-                            type='text' 
+                        <textarea
+                            type='text'
                             placeholder='Descreva o serviço a ser realizado..'
                             value={complement}
-                            onChange={ (e) => setComplement(e.target.value)}
+                            onChange={(e) => setComplement(e.target.value)}
                         />
 
                         <button>Registrar</button>

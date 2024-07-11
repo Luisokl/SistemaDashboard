@@ -3,6 +3,7 @@ import { AuthContext } from '../../contexts/auth'
 
 import Header from '../../components/Header'
 import Title from '../../components/Title'
+import Modal from '../../components/Modal'
 
 import { FiPlus, FiMessageSquare, FiSearch, FiEdit2 } from 'react-icons/fi'
 
@@ -29,7 +30,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         async function loadServices() {
-            const q = query(listRef, orderBy('created', 'desc'), limit(1)) //parametros para busca no banco de dados, por ordem descrecente de criação do doc.
+            const q = query(listRef, orderBy('created', 'desc'), limit(5)) //parametros para busca no banco de dados, por ordem descrecente de criação do doc.
             const querySnapshot = await getDocs(q) // faz a busca no banco com base na query acima
             await updateState(querySnapshot) // chamar função para listar os documentos
 
@@ -177,6 +178,8 @@ export default function Dashboard() {
 
                 </>
             </div>
+
+            <Modal/>
 
         </div>
 
