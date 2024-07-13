@@ -83,8 +83,8 @@ table td .action svg{
 }
 
 table td .badge{
-    padding: 3px;
-    border-radius: 3px;
+    padding: 8px 15px;
+    border-radius: 5px;
     color: #FFF;
 }
 

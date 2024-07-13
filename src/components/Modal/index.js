@@ -1,11 +1,11 @@
 import './modal.css'
 import { FiX } from 'react-icons/fi'
 
-export default function Modal() {
+export default function Modal({ conteudo, close }) {
     return (
         <div className='modal'>
             <div className='container'>
-                <button className='btn-close'>
+                <button className='btn-close' onClick={close}>
                     <FiX size={25} color='#FFF' />
                     Fechar
                 </button>
@@ -15,40 +15,47 @@ export default function Modal() {
 
                     <div className='row'>
                         <span>
-                            Cliente: <i>Fulano</i>
+                            Cliente: <i>{conteudo.cliente}</i>
                         </span>
                         <span>
-                            Mecânico: <i>Ciclano</i>
+                            Mecânico: <i>{conteudo.mecanico}</i>
                         </span>
                     </div>
 
                     <div className='row'>
                         <span>
-                            Automovel: <i>Fusion</i>
+                            Automovel: <i>{conteudo.automovel}</i>
                         </span>
                         <span>
-                            Ano: <i>2037</i>
+                            Ano: <i>{conteudo.ano}</i>
                         </span>
                     </div>
 
                     <div className='row'>
                         <span>
-                            Entrada: <i>27/06/2024</i>
+                            Entrada: <i>{conteudo.createdFormat}</i>
                         </span>
                         <span>
-                            Orçamento: <i>1.500,00</i>
+                            Orçamento: <i>{conteudo.orcamento}</i>
                         </span>
                     </div>
                     <div className='row'>
                         <span>
-                            Status: <i>Aberto</i>
+                            Status: <i className='status-badge' style={{
+                                color: '#FFF',
+                                backgroundColor: conteudo.status === 'Aberto' ? '#5CB85C'
+                                    : conteudo.status === 'Fechado' ? '#D9534F'
+                                    : '#999'
+                            }}>{conteudo.status}</i>
                         </span>
                     </div>
 
-                    <>
-                        <h3>Complemento</h3>
-                        <p> Conteudo do complemento Conteudo do complemento Conteudo do complemento Conteudo do complemento Conteudo do complemento Conteudo do complementoConteudo do complemento Conteudo do complemento Conteudo do complemento vConteudo do complemento Conteudo do complemento</p>
-                    </>
+                    {conteudo.complemento !== '' && (
+                        <>
+                            <h3>Complemento</h3>
+                            <p>{conteudo.complemento}</p>
+                        </>
+                    )}
 
                 </main>
             </div>

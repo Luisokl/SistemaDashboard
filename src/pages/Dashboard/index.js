@@ -28,6 +28,9 @@ export default function Dashboard() {
     const [lastDocs, setLastDocs] = useState() //salvar o ultimo item apresentado na lista 
     const [loadingMore, setLoadingMore] = useState(false) //loading enquanto busca por novos doc no banco de dados
 
+    const [postModal, setPostModal] = useState(false) //Controle da apresentação do Modal
+    const [detailsModal, setDetailsModal] = useState() //Informações do Modal
+
     useEffect(() => {
         async function loadServices() {
             const q = query(listRef, orderBy('created', 'desc'), limit(5)) //parametros para busca no banco de dados, por ordem descrecente de criação do doc.
@@ -102,6 +105,11 @@ export default function Dashboard() {
         )
     }
 
+    function toggleModal(item){
+        setPostModal(!postModal)
+        setDetailsModal(item)
+    }
+
     return (
         <div>
             <Header />
@@ -157,7 +165,7 @@ export default function Dashboard() {
                                                 </td>
                                                 <td data-label="#">
                                                     <button className='action'>
-                                                        <FiSearch color='#FFF' size={17} style={{ backgroundColor: '#3583f6' }} />
+                                                        <FiSearch color='#FFF' size={17} style={{ backgroundColor: '#3583f6' }} onClick={() => toggleModal(item)} />
                                                     </button>
                                                     <Link to={`/new/${item.id}`} className='action'>
                                                         <FiEdit2 color='#FFF' size={17} style={{ backgroundColor: '#F6A935' }} />
@@ -179,7 +187,12 @@ export default function Dashboard() {
                 </>
             </div>
 
-            <Modal/>
+            {postModal && (
+                <Modal
+                    conteudo={detailsModal}
+                    close ={() => setPostModal(!postModal)}
+                />
+            )}
 
         </div>
 
